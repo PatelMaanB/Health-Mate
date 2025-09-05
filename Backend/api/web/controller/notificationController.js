@@ -1,35 +1,14 @@
-const { getAllNotifications } = require("../model/notificationModel");
+const Notification = require("../schema/notificationSchema");
 
-const getAllNotifs = async (req, res) => {
+const getallnotifs = async (req, res) => {
   try {
-    if (!req.user || !req.user._id) {
-      return res.status(400).json({
-        status: false,
-        response_code: 400,
-        message: "User ID is required",
-        data: [],
-      });
-    }
-
-    const notifs = await getAllNotifications({ userId: req.user._id });
-
-    return res.status(200).json({
-      status: true,
-      response_code: 200,
-      message: "Notifications fetched successfully",
-      data: notifs,
-    });
+    const notifs = await Notification.find({ userId: req.locals });
+    return res.send(notifs);
   } catch (error) {
-    console.error("Error in getAllNotifs:", error);
-    return res.status(500).json({
-      status: false,
-      response_code: 500,
-      message: "Unable to get notifications",
-      data: [],
-    });
+    res.status(500).send("Unable to get all notifications");
   }
 };
 
 module.exports = {
-  getAllNotifs,
+  getallnotifs,
 };

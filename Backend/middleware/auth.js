@@ -1,53 +1,18 @@
-const { isVerifiedToken } = require("../utils/helper");
-const { findUserByToken } = require("../api/web/model/userModel");
+const jwt = require("jsonwebtoken");
 
-const authenticateToken = async (req, res, next) => {
+const auth = (req, res, next) => {
   try {
-    const token = req.headers.authentication;
-
-    if (!token) {
-      return res.status(401).json({
-        status: false,
-        response_code: 401,
-        message: "No token provided",
-        data: [],
-      });
+    const token = req.headers.authorization.split(" ")[1];
+    const verifyToken = jwt.verify(token, process.env.JWT_SECRET);
+    if (!verifyToken) {
+      return res.status(401).send("Token error");
     }
-
-    const isValid = await isVerifiedToken(token);
-
-    if (!isValid) {
-      return res.status(401).json({
-        status: false,
-        response_code: 401,
-        message: "Invalid or expired token",
-        data: [],
-      });
-    }
-
-    const user = await findUserByToken(token);
-
-    if (!user) {
-      return res.status(404).json({
-        status: false,
-        response_code: 404,
-        message: "User not found for the provided token",
-        data: [],
-      });
-    }
-
-    req.user = user;
-
+    req.locals = verifyToken.userId;
     next();
   } catch (error) {
-    console.error("Error in authenticateToken middleware:", error);
-    return res.status(500).json({
-      status: false,
-      response_code: 500,
-      message: "Internal server error",
-      data: [],
-    });
+    console.log(error);
+    return error;
   }
 };
 
-module.exports = authenticateToken;
+module.exports = auth;

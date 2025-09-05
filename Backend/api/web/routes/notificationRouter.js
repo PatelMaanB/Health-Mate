@@ -1,13 +1,13 @@
 const express = require("express");
-const authenticateToken = require("../../../middleware/auth");
+const auth = require("../../../middleware/auth");
 const notificationController = require("../controller/notificationController");
 
 const notificationRouter = express.Router();
 
 notificationRouter.get(
   "/getallnotifs",
-  authenticateToken,
-  notificationController.getAllNotifs
+  auth,
+  notificationController.getallnotifs
 );
 
 module.exports = notificationRouter;

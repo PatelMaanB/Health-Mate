@@ -1,195 +1,126 @@
-const {
-  addDoctor,
-  findDoctor,
-  updateDoctor,
-  getAllDoctors,
-  deleteDoctor,
-} = require("../model/doctorModel");
-const { updateUser } = require("../model/userModel");
-const addNotification = require("../model/notificationModel");
-const deleteAppointment = require("../model/appointmentModel");
+const Doctor = require("../schema/doctorSchema");
+const User = require("../schema/userSchema");
+const Notification = require("../schema/notificationSchema");
+const Appointment = require("../schema/appointmentSchema");
 
-const getAllDoctorsData = async (req, res) => {
+const getalldoctors = async (req, res) => {
   try {
-    let doctors;
-    if (!req.user || !req.user._id) {
-      doctors = await getAllDoctors({ isDoctor: true }, "userId");
+    let docs;
+    if (!req.locals) {
+      docs = await Doctor.find({ isDoctor: true }).populate("userId");
     } else {
-      doctors = await getAllDoctors(
-        { isDoctor: true, _id: { $ne: req.user._id } },
-        "userId"
-      );
+      docs = await Doctor.find({ isDoctor: true })
+        .find({
+          _id: { $ne: req.locals },
+        })
+        .populate("userId");
     }
 
-    return res.status(200).json({
-      status: true,
-      response_code: 200,
-      message: "Doctors fetched successfully",
-      data: doctors,
-    });
+    return res.send(docs);
   } catch (error) {
-    console.error("Error in getAllDoctorsData:", error);
-    return res.status(500).json({
-      status: false,
-      response_code: 500,
-      message: "Unable to get doctors",
-      data: [],
-    });
+    res.status(500).send("Unable to get doctors");
   }
 };
 
-const getNonDoctors = async (req, res) => {
+const getnotdoctors = async (req, res) => {
   try {
-    const doctors = await getAllDoctors(
-      { isDoctor: false, _id: { $ne: req.user._id } },
-      "userId"
-    );
+    const docs = await Doctor.find({ isDoctor: false })
+      .find({
+        _id: { $ne: req.locals },
+      })
+      .populate("userId");
 
-    return res.status(200).json({
-      status: true,
-      response_code: 200,
-      message: "Non-doctors fetched successfully",
-      data: doctors,
-    });
+    return res.send(docs);
   } catch (error) {
-    console.error("Error in getNonDoctors:", error);
-    return res.status(500).json({
-      status: false,
-      response_code: 500,
-      message: "Unable to get non-doctors",
-      data: [],
-    });
+    res.status(500).send("Unable to get non doctors");
   }
 };
 
-const applyForDoctor = async (req, res) => {
+const applyfordoctor = async (req, res) => {
   try {
-    const alreadyFound = await findDoctor({ userId: req.user._id });
+    const alreadyFound = await Doctor.findOne({ userId: req.locals });
     if (alreadyFound) {
-      return res.status(400).json({
-        status: false,
-        response_code: 400,
-        message: "Application already exists",
-        data: [],
-      });
+      return res.status(400).send("Application already exists");
     }
 
-    const doctorData = { ...req.body.formDetails, userId: req.user._id };
-    const doctor = await addDoctor(doctorData);
+    const doctor = Doctor({ ...req.body.formDetails, userId: req.locals });
+    const result = await doctor.save();
 
-    return res.status(201).json({
-      status: true,
-      response_code: 201,
-      message: "Application submitted successfully",
-      data: doctor,
-    });
+    return res.status(201).send("Application submitted successfully");
   } catch (error) {
-    console.error("Error in applyForDoctor:", error);
-    return res.status(500).json({
-      status: false,
-      response_code: 500,
-      message: "Unable to submit application",
-      data: [],
-    });
+    res.status(500).send("Unable to submit application");
   }
 };
 
-const acceptDoctor = async (req, res) => {
+const acceptdoctor = async (req, res) => {
   try {
-    const updatedUser = await updateUser(
+    const user = await User.findOneAndUpdate(
       { _id: req.body.id },
       { isDoctor: true, status: "accepted" }
     );
 
-    const updatedDoctor = await updateDoctor(
+    const doctor = await Doctor.findOneAndUpdate(
       { userId: req.body.id },
       { isDoctor: true }
     );
 
-    await addNotification({
+    const notification = await Notification({
       userId: req.body.id,
-      content: "Congratulations, Your application has been accepted.",
+      content: `Congratulations, Your application has been accepted.`,
     });
 
-    return res.status(201).json({
-      status: true,
-      response_code: 201,
-      message: "Application accepted and notification sent",
-      data: { updatedUser, updatedDoctor },
-    });
+    await notification.save();
+
+    return res.status(201).send("Application accepted notification sent");
   } catch (error) {
-    console.error("Error in acceptDoctor:", error);
-    return res.status(500).json({
-      status: false,
-      response_code: 500,
-      message: "Error while sending acceptance notification",
-      data: [],
-    });
+    res.status(500).send("Error while sending notification");
   }
 };
 
-const rejectDoctor = async (req, res) => {
+const rejectdoctor = async (req, res) => {
   try {
-    const updatedUser = await updateUser(
+    const details = await User.findOneAndUpdate(
       { _id: req.body.id },
       { isDoctor: false, status: "rejected" }
     );
+    const delDoc = await Doctor.findOneAndDelete({ userId: req.body.id });
 
-    const deletedDoctor = await deleteDoctor({ userId: req.body.id });
-
-    await addNotification({
+    const notification = await Notification({
       userId: req.body.id,
-      content: "Sorry, Your application has been rejected.",
+      content: `Sorry, Your application has been rejected.`,
     });
 
-    return res.status(201).json({
-      status: true,
-      response_code: 201,
-      message: "Application rejected and notification sent",
-      data: { updatedUser, deletedDoctor },
-    });
+    await notification.save();
+
+    return res.status(201).send("Application rejection notification sent");
   } catch (error) {
-    console.error("Error in rejectDoctor:", error);
-    return res.status(500).json({
-      status: false,
-      response_code: 500,
-      message: "Error while rejecting application",
-      data: [],
-    });
+    res.status(500).send("Error while rejecting application");
   }
 };
 
-const removeDoctor = async (req, res) => {
+const deletedoctor = async (req, res) => {
   try {
-    const updatedUser = await updateUser(
-      { _id: req.body.userId },
-      { isDoctor: false }
-    );
-    const deletedDoctor = await deleteDoctor({ userId: req.body.userId });
-    await deleteAppointment({ userId: req.body.userId });
-
-    return res.status(200).json({
-      status: true,
-      response_code: 200,
-      message: "Doctor and related appointments deleted successfully",
-      data: { updatedUser, deletedDoctor },
+    const result = await User.findByIdAndUpdate(req.body.userId, {
+      isDoctor: false,
     });
+    const removeDoc = await Doctor.findOneAndDelete({
+      userId: req.body.userId,
+    });
+    const removeAppoint = await Appointment.findOneAndDelete({
+      userId: req.body.userId,
+    });
+    return res.send("Doctor deleted successfully");
   } catch (error) {
-    console.error("Error in removeDoctor:", error);
-    return res.status(500).json({
-      status: false,
-      response_code: 500,
-      message: "Unable to delete doctor",
-      data: [],
-    });
+    console.log("error", error);
+    res.status(500).send("Unable to delete doctor");
   }
 };
 
 module.exports = {
-  getAllDoctorsData,
-  getNonDoctors,
-  applyForDoctor,
-  acceptDoctor,
-  rejectDoctor,
-  removeDoctor,
+  getalldoctors,
+  getnotdoctors,
+  deletedoctor,
+  applyfordoctor,
+  acceptdoctor,
+  rejectdoctor,
 };

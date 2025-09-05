@@ -56,9 +56,7 @@ function Login() {
 
   const getUser = async (id) => {
     try {
-      const temp = await fetchData(
-        `${process.env.REACT_APP_SERVER_DOMAIN}/user/getuser/${id}`
-      );
+      const temp = await fetchData(`/user/getuser/${id}`);
       dispatch(setUserInfo(temp));
       return navigate("/");
     } catch (error) {

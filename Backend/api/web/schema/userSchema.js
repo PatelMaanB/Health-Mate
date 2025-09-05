@@ -47,10 +47,6 @@ const schema = mongoose.Schema(
       type: String,
       default: "pending",
     },
-    token: {
-      type: String,
-      default: null,
-    },
     imagePath: {
       type: String,
       default:

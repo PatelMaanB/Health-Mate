@@ -1,23 +1,18 @@
 const express = require("express");
-const authenticateToken = require("../../../middleware/auth");
+const auth = require("../../../middleware/auth");
 const userController = require("../controller/userController");
-const saveBase64Image = require("../../../middleware/base64Image");
 const userRouter = express.Router();
 
-userRouter.get("/getuser", authenticateToken, userController.getUser);
+userRouter.get("/getuser/:id", auth, userController.getuser);
 
-userRouter.get(
-  "/getallusers",
-  authenticateToken,
-  userController.getAllUserData
-);
+userRouter.get("/getallusers", auth, userController.getallusers);
 
-userRouter.post("/login", userController.userLogin);
+userRouter.post("/login", userController.login);
 
-userRouter.post("/register", saveBase64Image, userController.registerUser);
+userRouter.post("/register", userController.register);
 
-userRouter.put("/updateprofile", authenticateToken, userController.editUser);
+userRouter.put("/updateprofile", auth, userController.updateprofile);
 
-userRouter.delete("/deleteuser", authenticateToken, userController.removeUser);
+userRouter.delete("/deleteuser", auth, userController.deleteuser);
 
 module.exports = userRouter;

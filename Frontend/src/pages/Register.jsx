@@ -1,9 +1,8 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import "../styles/register.css";
 import axios from "axios";
 import toast from "react-hot-toast";
-import convertToBase64 from "../helper/convertImage";
 
 function Register() {
   const [loading, setLoading] = useState(false);
@@ -13,7 +12,7 @@ function Register() {
     email: "",
     password: "",
     confpassword: "",
-    profileImage: "",
+    file: "",
   });
   const navigate = useNavigate();
 
@@ -38,15 +37,9 @@ function Register() {
       e.preventDefault();
 
       if (loading) return;
-      setLoading(true);
-      const {
-        firstname,
-        lastname,
-        email,
-        password,
-        confpassword,
-        profileImage,
-      } = formDetails;
+
+      const { firstname, lastname, email, password, confpassword, file } =
+        formDetails;
       if (!firstname || !lastname || !email || !password || !confpassword) {
         return toast.error("Input field should not be empty");
       } else if (firstname.length < 3) {
@@ -59,23 +52,21 @@ function Register() {
         return toast.error("Passwords do not match");
       }
 
-      const base64Image = await convertToBase64(profileImage);
-
       await toast.promise(
-        axios.post("http://localhost:5000/user/register", {
+        axios.post(`${process.env.REACT_APP_SERVER_DOMAIN}/user/register`, {
           firstname,
           lastname,
           email,
           password,
-          profileImage: base64Image,
+          pic: file,
         }),
         {
           pending: "Registering user...",
           success: "User registered successfully",
           error: "Unable to register user",
+          loading: "Registering user...",
         }
       );
-      setLoading(false);
       return navigate("/login");
     } catch (error) {}
   };
@@ -111,10 +102,11 @@ function Register() {
           />
           <input
             type="file"
-            name="profile-pic"
+            onChange={inputChange}
+            name="file"
             id="profile-pic"
             className="form-input"
-            onChange={inputChange}
+            value={formDetails.file}
           />
           <input
             type="password"

@@ -38,7 +38,7 @@ function Profile() {
         mobile: temp.mobile === null ? "" : temp.mobile,
         age: temp.age === null ? "" : temp.age,
       });
-      setFile(temp.pic);
+      setFile(temp.image_path);
       dispatch(setLoading(false));
     } catch (error) {}
   };
@@ -122,15 +122,8 @@ function Profile() {
         <section className="register-section flex-center">
           <div className="profile-container flex-center">
             <h2 className="form-heading">Profile</h2>
-            <img
-              src={file}
-              alt="profile"
-              className="profile-pic"
-            />
-            <form
-              onSubmit={formSubmit}
-              className="register-form"
-            >
+            <img src={file} alt="profile" className="profile-pic" />
+            <form onSubmit={formSubmit} className="register-form">
               <div className="form-same-row">
                 <input
                   type="text"
@@ -215,10 +208,7 @@ function Profile() {
                   onChange={inputChange}
                 />
               </div>
-              <button
-                type="submit"
-                className="btn form-btn"
-              >
+              <button type="submit" className="btn form-btn">
                 update
               </button>
             </form>

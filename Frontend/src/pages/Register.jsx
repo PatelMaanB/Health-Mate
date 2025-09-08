@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import "../styles/register.css";
 import axios from "axios";
 import toast from "react-hot-toast";
+import convertToBase64 from "../helper/convertImage";
 
 function Register() {
   const [loading, setLoading] = useState(false);
@@ -16,18 +17,21 @@ function Register() {
   });
   const navigate = useNavigate();
 
-  const inputChange = async (e) => {
-    const { name, value, files } = e.target;
+  const inputChange = (e) => {
+    const { name, value } = e.target;
+    setFormDetails({
+      ...formDetails,
+      [name]: value,
+    });
+  };
 
-    if (name === "profileImage") {
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const base64 = await convertToBase64(file);
       setFormDetails({
         ...formDetails,
-        profileImage: files[0],
-      });
-    } else {
-      setFormDetails({
-        ...formDetails,
-        [name]: value,
+        file: base64,
       });
     }
   };
@@ -46,8 +50,8 @@ function Register() {
         return toast.error("First name must be at least 3 characters long");
       } else if (lastname.length < 3) {
         return toast.error("Last name must be at least 3 characters long");
-      } else if (password.length < 5) {
-        return toast.error("Password must be at least 5 characters long");
+      } else if (password.length < 6) {
+        return toast.error("Password must be at least 6 characters long");
       } else if (password !== confpassword) {
         return toast.error("Passwords do not match");
       }
@@ -68,7 +72,10 @@ function Register() {
         }
       );
       return navigate("/login");
-    } catch (error) {}
+    } catch (error) {
+      console.error(error);
+      toast.error("Something went wrong");
+    }
   };
 
   return (
@@ -102,11 +109,11 @@ function Register() {
           />
           <input
             type="file"
-            onChange={inputChange}
             name="file"
             id="profile-pic"
             className="form-input"
-            value={formDetails.file}
+            accept="image/*"
+            onChange={handleFileChange}
           />
           <input
             type="password"

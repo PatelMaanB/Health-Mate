@@ -3,11 +3,28 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const Doctor = require("../schema/doctorSchema");
 const Appointment = require("../schema/appointmentSchema");
+const { getAssetURL } = require("../../../utils/helper");
 
 const getuser = async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select("-password");
-    return res.send(user);
+    const mappedUser = {
+      id: user._id,
+      firstname: user.firstname,
+      lastname: user.lastname,
+      email: user.email,
+      isAdmin: user.isAdmin,
+      isDoctor: user.isDoctor,
+      age: user.age,
+      gender: user.gender,
+      mobile: user.mobile,
+      address: user.address,
+      status: user.status,
+      imagePath: getAssetURL(user.imagePath) || "",
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    };
+    return res.send(mappedUser);
   } catch (error) {
     res.status(500).send("Unable to get user");
   }
@@ -51,13 +68,18 @@ const login = async (req, res) => {
 };
 
 const register = async (req, res) => {
+  const pic = req.imagePath;
   try {
     const emailPresent = await User.findOne({ email: req.body.email });
     if (emailPresent) {
       return res.status(400).send("Email already exists");
     }
     const hashedPass = await bcrypt.hash(req.body.password, 10);
-    const user = await User({ ...req.body, password: hashedPass });
+    const user = await User({
+      ...req.body,
+      password: hashedPass,
+      imagePath: pic,
+    });
     const result = await user.save();
     if (!result) {
       return res.status(500).send("Unable to register user");
